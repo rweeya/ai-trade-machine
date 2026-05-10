@@ -190,18 +190,14 @@ def check_signal(symbol):
 
 # 🔥 ТВОИ АКТИВЫ (те, что на сайте + популярные)
 SYMBOLS = [
-    # Криптовалюты
     "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT",
     "DOGEUSDT", "ADAUSDT", "AVAXUSDT", "DOTUSDT", "MATICUSDT",
     "LINKUSDT", "UNIUSDT", "ATOMUSDT", "NEARUSDT", "OPUSDT",
     "ARBUSDT", "APTUSDT", "LTCUSDT", "BCHUSDT", "ETCUSDT",
     "XLMUSDT", "VETUSDT", "TRXUSDT", "EGLDUSDT", "THETAUSDT",
     "FILUSDT", "SANDUSDT", "MANAUSDT", "AXSUSDT", "AAVEUSDT",
-    
-    # Форекс и сырьё (через Binance фьючерсы или другие API — позже)
-    # Пока оставим крипту, так как Binance даёт просто API
+    "ICPUSDT", "HBARUSDT", "FTMUSDT", "ALGOUSDT", "QNTUSDT"
 ]
-
 def main():
     print("🤖 AI TRADE MACHINE - ПАРСЕР ЗАПУЩЕН")
     print(f"📊 Отслеживаем {len(SYMBOLS)} активов")
