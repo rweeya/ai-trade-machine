@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trade Machine</title>
+    <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230a0e27'/%3E%3Ccircle cx='50' cy='40' r='18' fill='%2300ffaa'/%3E%3Crect x='35' y='55' width='30' height='25' rx='5' fill='%2300ffaa'/%3E%3Ccircle cx='38' cy='52' r='3' fill='%230a0e27'/%3E%3Ccircle cx='62' cy='52' r='3' fill='%230a0e27'/%3E%3C/svg%3E">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e27; color: #00ffaa; font-family: 'Segoe UI', monospace; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #00ffaa33; flex-wrap: wrap; gap: 15px; }
+        h1 { font-size: 28px; text-shadow: 0 0 10px #00ffaa; display: flex; align-items: center; gap: 10px; }
+        .badge { background: #00ffaa22; padding: 8px 16px; border-radius: 20px; font-size: 14px; border: 1px solid #00ffaa; }
+        .selector { background: #0f1233; padding: 8px 16px; border-radius: 20px; border: 1px solid #00ffaa; color: #00ffaa; font-size: 16px; cursor: pointer; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .card { background: #0f1233; border-radius: 12px; padding: 20px; border: 1px solid #00ffaa33; }
+        .card h2 { font-size: 18px; margin-bottom: 15px; color: #00ffaa; }
+        
+        /* Большая таблица с прокруткой */
+        .signals-container { max-height: 500px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #00ffaa33; }
+        th { color: #00ffaa; position: sticky; top: 0; background: #0f1233; }
+        tr { cursor: pointer; transition: all 0.2s; }
+        tr:hover { background: #00ffaa11; }
+        .buy { color: #00ff88; font-weight: bold; }
+        .sell { color: #ff4444; font-weight: bold; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center; }
+        .stat-item { background: #0a0e27; padding: 15px; border-radius: 10px; }
+        .stat-value { font-size: 32px; font-weight: bold; color: #00ffaa; }
+        .stat-label { font-size: 12px; color: #888; }
+        
+        .chart-card { margin-top: 20px; }
+        iframe { width: 100%; height: 500px; border-radius: 12px; border: 1px solid #00ffaa33; background: #0f1233; }
+        
+        .btn-refresh { background: #00ffaa; color: #0a0e27; border: none; padding: 10px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; transition: all 0.3s; }
+        .btn-refresh:hover { background: #00cc88; transform: scale(1.02); }
+        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #555; }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f1233; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #00ffaa33; border-radius: 10px; }
+        
+        @media (max-width: 800px) { .dashboard { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🤖 AI TRADE MACHINE</h1>
+    <div style="display: flex; gap: 15px; align-items: center;">
+        <select id="symbolSelect" class="selector" onchange="changeChart()">
+            <optgroup label="🔥 КРИПТОВАЛЮТЫ">
+                <option value="BINANCE:BTCUSDT">₿ Bitcoin (BTC)</option>
+                <option value="BINANCE:ETHUSDT">⟠ Ethereum (ETH)</option>
+                <option value="BINANCE:SOLUSDT">◎ Solana (SOL)</option>
+                <option value="BINANCE:BNBUSDT">🟡 BNB</option>
+                <option value="BINANCE:XRPUSDT">💧 XRP</option>
+                <option value="BINANCE:DOGEUSDT">🐕 Dogecoin</option>
+                <option value="BINANCE:ADAUSDT">📊 Cardano (ADA)</option>
+                <option value="BINANCE:AVAXUSDT">🏔 Avalanche (AVAX)</option>
+                <option value="BINANCE:DOTUSDT">🔗 Polkadot (DOT)</option>
+                <option value="BINANCE:MATICUSDT">🟣 Polygon (MATIC)</option>
+                <option value="BINANCE:LINKUSDT">🔗 Chainlink</option>
+                <option value="BINANCE:UNIUSDT">🦄 Uniswap</option>
+                <option value="BINANCE:ATOMUSDT">⚛ Cosmos</option>
+                <option value="BINANCE:NEARUSDT">🌐 NEAR</option>
+                <option value="BINANCE:OPUSDT">⭕ Optimism</option>
+                <option value="BINANCE:ARBUSDT">🔷 Arbitrum</option>
+                <option value="BINANCE:APTUSDT">⚡ Aptos</option>
+                <option value="BINANCE:LTCUSDT"> Litecoin</option>
+                <option value="BINANCE:BCHUSDT">💸 Bitcoin Cash</option>
+                <option value="BINANCE:ETCUSDT">🔶 Ethereum Classic</option>
+                <option value="BINANCE:XLMUSDT">⭐ Stellar</option>
+                <option value="BINANCE:VETUSDT">🌿 VeChain</option>
+                <option value="BINANCE:TRXUSDT">💎 TRON</option>
+                <option value="BINANCE:EGLDUSDT">⚡ Elrond</option>
+                <option value="BINANCE:THETAUSDT">🎬 Theta</option>
+                <option value="BINANCE:FILUSDT">📁 Filecoin</option>
+                <option value="BINANCE:SANDUSDT">🏖 The Sandbox</option>
+                <option value="BINANCE:MANAUSDT">🏰 Decentraland</option>
+                <option value="BINANCE:AXSUSDT">⚔ Axie Infinity</option>
+                <option value="BINANCE:AAVEUSDT">🏦 Aave</option>
+                <option value="BINANCE:ICPUSDT">🟣 Internet Computer</option>
+                <option value="BINANCE:HBARUSDT">⚡ Hedera</option>
+                <option value="BINANCE:FTMUSDT">🔥 Fantom</option>
+                <option value="BINANCE:ALGOUSDT">🔷 Algorand</option>
+                <option value="BINANCE:QNTUSDT">🔐 Quant</option>
+            </optgroup>
+        </select>
+        <div class="badge">🟢 АКТИВЕН</div>
+    </div>
+</div>
+
+<div class="dashboard">
+    <div class="card">
+        <h2>📊 АКТИВНЫЕ СИГНАЛЫ <span id="signalCount" style="font-size:14px;"></span></h2>
+        <div class="signals-container">
+            <table>
+                <thead>
+                    <tr><th>Время</th><th>Актив</th><th>Действие</th><th>Цена</th><th>RSI</th><th>Причина</th></tr>
+                </thead>
+                <tbody id="signalsBody">
+                    <tr><td colspan="6">Загрузка...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card">
+        <h2>📈 СТАТИСТИКА</h2>
+        <div class="stats-grid">
+            <div class="stat-item"><div class="stat-value" id="totalSignals">0</div><div class="stat-label">ВСЕГО</div></div>
+            <div class="stat-item"><div class="stat-value" id="buySignals">0</div><div class="stat-label">BUY</div></div>
+            <div class="stat-item"><div class="stat-value" id="sellSignals">0</div><div class="stat-label">SELL</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="card chart-card">
+    <h2>📉 ГРАФИК <span id="currentSymbolLabel">BTCUSDT</span></h2>
+    <iframe id="tradingviewFrame" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_123&symbol=BINANCE:BTCUSDT&interval=60&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=RSI%2CMACD&theme=dark&style=1&timezone=Etc/UTC" frameborder="0"></iframe>
+</div>
+
+<button class="btn-refresh" onclick="refreshSignals()">🔄 ОБНОВИТЬ СИГНАЛЫ</button>
+
+<div class="footer">
+    AI TRADE MACHINE v2.0 | 50+ активов | RSI + MACD + EMA + Stochastic + Volume | Клик по сигналу → график
+</div>
+
+<script>
+    // Маппинг символов для TradingView
+    const symbolMap = {
+        "BTCUSDT": "BINANCE:BTCUSDT",
+        "ETHUSDT": "BINANCE:ETHUSDT",
+        "SOLUSDT": "BINANCE:SOLUSDT",
+        "BNBUSDT": "BINANCE:BNBUSDT",
+        "XRPUSDT": "BINANCE:XRPUSDT",
+        "DOGEUSDT": "BINANCE:DOGEUSDT",
+        "ADAUSDT": "BINANCE:ADAUSDT",
+        "AVAXUSDT": "BINANCE:AVAXUSDT",
+        "DOTUSDT": "BINANCE:DOTUSDT",
+        "MATICUSDT": "BINANCE:MATICUSDT",
+        "LINKUSDT": "BINANCE:LINKUSDT",
+        "UNIUSDT": "BINANCE:UNIUSDT",
+        "ATOMUSDT": "BINANCE:ATOMUSDT",
+        "NEARUSDT": "BINANCE:NEARUSDT",
+        "OPUSDT": "BINANCE:OPUSDT",
+        "ARBUSDT": "BINANCE:ARBUSDT",
+        "APTUSDT": "BINANCE:APTUSDT",
+        "LTCUSDT": "BINANCE:LTCUSDT",
+        "BCHUSDT": "BINANCE:BCHUSDT",
+        "ETCUSDT": "BINANCE:ETCUSDT",
+        "XLMUSDT": "BINANCE:XLMUSDT",
+        "VETUSDT": "BINANCE:VETUSDT",
+        "TRXUSDT": "BINANCE:TRXUSDT",
+        "EGLDUSDT": "BINANCE:EGLDUSDT",
+        "THETAUSDT": "BINANCE:THETAUSDT",
+        "FILUSDT": "BINANCE:FILUSDT",
+        "SANDUSDT": "BINANCE:SANDUSDT",
+        "MANAUSDT": "BINANCE:MANAUSDT",
+        "AXSUSDT": "BINANCE:AXSUSDT",
+        "AAVEUSDT": "BINANCE:AAVEUSDT",
+        "ICPUSDT": "BINANCE:ICPUSDT",
+        "HBARUSDT": "BINANCE:HBARUSDT",
+        "FTMUSDT": "BINANCE:FTMUSDT",
+        "ALGOUSDT": "BINANCE:ALGOUSDT",
+        "QNTUSDT": "BINANCE:QNTUSDT"
+    };
+    
+    function changeChartToSymbol(symbol) {
+        let tvSymbol = symbolMap[symbol] || `BINANCE:${symbol}`;
+        document.getElementById('currentSymbolLabel').innerText = symbol;
+        const frame = document.getElementById('tradingviewFrame');
+        frame.src = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_123&symbol=${encodeURIComponent(tvSymbol)}&interval=60&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=RSI%2CMACD&theme=dark&style=1&timezone=Etc/UTC`;
+        
+        // Обновляем выпадающий список
+        const select = document.getElementById('symbolSelect');
+        for(let i = 0; i < select.options.length; i++) {
+            if(select.options[i].value === tvSymbol) {
+                select.selectedIndex = i;
+                break;
+            }
+        }
+    }
+    
+    function changeChart() {
+        const tvSymbol = document.getElementById('symbolSelect').value;
+        const symbolName = document.getElementById('symbolSelect').selectedOptions[0].text;
+        document.getElementById('currentSymbolLabel').innerText = symbolName;
+        const frame = document.getElementById('tradingviewFrame');
+        frame.src = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_123&symbol=${encodeURIComponent(tvSymbol)}&interval=60&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=RSI%2CMACD&theme=dark&style=1&timezone=Etc/UTC`;
+    }
+    
+    async function refreshSignals() {
+        try {
+            const response = await fetch('/api/signals');
+            const signals = await response.json();
+            const tbody = document.getElementById('signalsBody');
+            
+            if (signals.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">📭 Нет активных сигналов</td></tr>';
+                document.getElementById('signalCount').innerText = '(0)';
+            } else {
+                tbody.innerHTML = signals.map(s => `
+                    <tr onclick="changeChartToSymbol('${s.symbol}')" style="cursor:pointer;">
+                        <td>${new Date(s.timestamp).toLocaleTimeString()}</td>
+                        <td><b>${s.symbol}</b></td>
+                        <td class="${s.action === 'buy' ? 'buy' : 'sell'}">${s.action.toUpperCase()}</td>
+                        <td>$${Number(s.price).toLocaleString()}</td>
+                        <td>${s.rsi !== '-' ? s.rsi : '-'}</td>
+                        <td style="font-size:12px; max-width:250px;">${s.reason || '-'}</td>
+                    </tr>
+                `).join('');
+                document.getElementById('signalCount').innerText = `(${signals.length})`;
+            }
+            
+            const total = signals.length;
+            const buys = signals.filter(s => s.action === 'buy').length;
+            const sells = total - buys;
+            document.getElementById('totalSignals').innerText = total;
+            document.getElementById('buySignals').innerText = buys;
+            document.getElementById('sellSignals').innerText = sells;
+        } catch (e) { console.error('Ошибка:', e); }
+    }
+    
+    refreshSignals();
+    setInterval(refreshSignals, 10000);
+</script>
+
+</body>
+</html>
