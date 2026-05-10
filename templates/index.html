@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trade Machine</title>
+    <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230a0e27'/%3E%3Ccircle cx='50' cy='40' r='18' fill='%2300ffaa'/%3E%3Crect x='35' y='55' width='30' height='25' rx='5' fill='%2300ffaa'/%3E%3Ccircle cx='38' cy='52' r='3' fill='%230a0e27'/%3E%3Ccircle cx='62' cy='52' r='3' fill='%230a0e27'/%3E%3C/svg%3E">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e27; color: #00ffaa; font-family: 'Segoe UI', monospace; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #00ffaa33; flex-wrap: wrap; gap: 15px; }
+        h1 { font-size: 28px; text-shadow: 0 0 10px #00ffaa; display: flex; align-items: center; gap: 10px; }
+        .badge { background: #00ffaa22; padding: 8px 16px; border-radius: 20px; font-size: 14px; border: 1px solid #00ffaa; }
+        .selector { background: #0f1233; padding: 8px 16px; border-radius: 20px; border: 1px solid #00ffaa; color: #00ffaa; font-size: 16px; cursor: pointer; }
+        .selector option { background: #0a0e27; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .card { background: #0f1233; border-radius: 12px; padding: 20px; border: 1px solid #00ffaa33; }
+        .card h2 { font-size: 18px; margin-bottom: 15px; color: #00ffaa; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #00ffaa33; }
+        th { color: #00ffaa; }
+        .buy { color: #00ff88; font-weight: bold; }
+        .sell { color: #ff4444; font-weight: bold; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center; }
+        .stat-item { background: #0a0e27; padding: 15px; border-radius: 10px; }
+        .stat-value { font-size: 32px; font-weight: bold; color: #00ffaa; }
+        .stat-label { font-size: 12px; color: #888; }
+        .chart-card { margin-top: 20px; }
+        iframe { width: 100%; height: 450px; border-radius: 12px; border: 1px solid #00ffaa33; background: #0f1233; }
+        .btn-refresh { background: #00ffaa; color: #0a0e27; border: none; padding: 10px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; transition: all 0.3s; }
+        .btn-refresh:hover { background: #00cc88; transform: scale(1.02); }
+        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #555; }
+        @media (max-width: 800px) { .dashboard { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>
+        <span>🤖 AI TRADE MACHINE</span>
+    </h1>
+    <div style="display: flex; gap: 15px; align-items: center;">
+        <select id="symbolSelect" class="selector" onchange="changeChart()">
+            <optgroup label="🔥 ТОП КРИПТОВАЛЮТЫ">
+                <option value="BINANCE:BTCUSDT">₿ Bitcoin (BTC)</option>
+                <option value="BINANCE:ETHUSDT">⟠ Ethereum (ETH)</option>
+                <option value="BINANCE:SOLUSDT">◎ Solana (SOL)</option>
+                <option value="BINANCE:BNBUSDT">🟡 BNB</option>
+                <option value="BINANCE:XRPUSDT">💧 XRP</option>
+                <option value="BINANCE:DOGEUSDT">🐕 Dogecoin</option>
+                <option value="BINANCE:ADAUSDT">📊 Cardano (ADA)</option>
+                <option value="BINANCE:AVAXUSDT">🏔 Avalanche (AVAX)</option>
+                <option value="BINANCE:DOTUSDT">🔗 Polkadot (DOT)</option>
+                <option value="BINANCE:MATICUSDT">🟣 Polygon (MATIC)</option>
+                <option value="BINANCE:LINKUSDT">🔗 Chainlink</option>
+                <option value="BINANCE:UNIUSDT">🦄 Uniswap</option>
+                <option value="BINANCE:ATOMUSDT">⚛ Cosmos</option>
+                <option value="BINANCE:NEARUSDT">🌐 NEAR</option>
+                <option value="BINANCE:OPUSDT">⭕ Optimism</option>
+                <option value="BINANCE:ARBUSDT">🔷 Arbitrum</option>
+                <option value="BINANCE:APTUSDT">⚡ Aptos</option>
+                <option value="BINANCE:LTCUSDT"> Litecoin</option>
+                <option value="BINANCE:BCHUSDT">💸 Bitcoin Cash</option>
+                <option value="BINANCE:ETCUSDT">🔶 Ethereum Classic</option>
+                <option value="BINANCE:XLMUSDT">⭐ Stellar</option>
+                <option value="BINANCE:VETUSDT">🌿 VeChain</option>
+                <option value="BINANCE:TRXUSDT">💎 TRON</option>
+                <option value="BINANCE:EGLDUSDT">⚡ Elrond</option>
+                <option value="BINANCE:THETAUSDT">🎬 Theta</option>
+                <option value="BINANCE:FILUSDT">📁 Filecoin</option>
+                <option value="BINANCE:SANDUSDT">🏖 The Sandbox</option>
+                <option value="BINANCE:MANAUSDT">🏰 Decentraland</option>
+                <option value="BINANCE:AXSUSDT">⚔ Axie Infinity</option>
+                <option value="BINANCE:AAVEUSDT">🏦 Aave</option>
+            </optgroup>
+            <optgroup label="📈 ФОРЕКС">
+                <option value="FX:EURUSD">💶 EUR/USD</option>
+                <option value="FX:GBPUSD">💷 GBP/USD</option>
+                <option value="FX:USDJPY">💴 USD/JPY</option>
+                <option value="FX:USDCHF">🇨🇭 USD/CHF</option>
+                <option value="FX:AUDUSD">🇦🇺 AUD/USD</option>
+                <option value="FX:USDCAD">🇨🇦 USD/CAD</option>
+                <option value="FX:NZDUSD">🇳🇿 NZD/USD</option>
+            </optgroup>
+            <optgroup label="📊 АКЦИИ США">
+                <option value="NASDAQ:AAPL">🍎 Apple (AAPL)</option>
+                <option value="NASDAQ:MSFT">💻 Microsoft (MSFT)</option>
+                <option value="NASDAQ:GOOGL">🔍 Google (GOOGL)</option>
+                <option value="NASDAQ:AMZN">📦 Amazon (AMZN)</option>
+                <option value="NASDAQ:TSLA">🚀 Tesla (TSLA)</option>
+                <option value="NASDAQ:META">📘 Meta (Facebook)</option>
+                <option value="NYSE:NVDA">🎮 NVIDIA (NVDA)</option>
+                <option value="NYSE:JPM">🏦 JPMorgan</option>
+                <option value="NYSE:JNJ">💊 Johnson & Johnson</option>
+                <option value="NYSE:WMT">🛒 Walmart</option>
+                <option value="NYSE:KO">🥤 Coca-Cola</option>
+                <option value="NYSE:DIS">🏰 Disney</option>
+                <option value="NYSE:BA">✈ Boeing</option>
+                <option value="NASDAQ:NFLX">📺 Netflix</option>
+                <option value="NASDAQ:AMD">💻 AMD</option>
+                <option value="NYSE:GS">🏛 Goldman Sachs</option>
+            </optgroup>
+            <optgroup label="🛢 СЫРЬЁ И ИНДЕКСЫ">
+                <option value="TVC:GOLD">🥇 Золото (XAU/USD)</option>
+                <option value="TVC:SILVER">🥈 Серебро (XAG/USD)</option>
+                <option value="NYMEX:CL1!">🛢 Нефть (WTI)</option>
+                <option value="INDEX:SPX">📈 S&P 500</option>
+                <option value="INDEX:NDX">📊 NASDAQ 100</option>
+                <option value="INDEX:DJI">🏛 Dow Jones</option>
+                <option value="BITSTAMP:BTCUSD">₿ Bitcoin (Bitstamp)</option>
+            </optgroup>
+        </select>
+        <div class="badge">🟢 АКТИВЕН</div>
+    </div>
+</div>
+
+<div class="dashboard">
+    <div class="card">
+        <h2>📊 АКТИВНЫЕ СИГНАЛЫ</h2>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr><th>Время</th><th>Актив</th><th>Действие</th><th>Цена</th><th>RSI</th><th>Причина</th></tr>
+                </thead>
+                <tbody id="signalsBody">
+                    <tr><td colspan="6">Загрузка...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card">
+        <h2>📈 СТАТИСТИКА</h2>
+        <div class="stats-grid">
+            <div class="stat-item"><div class="stat-value" id="totalSignals">0</div><div class="stat-label">ВСЕГО</div></div>
+            <div class="stat-item"><div class="stat-value" id="buySignals">0</div><div class="stat-label">BUY</div></div>
+            <div class="stat-item"><div class="stat-value" id="sellSignals">0</div><div class="stat-label">SELL</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="card chart-card">
+    <h2>📉 ГРАФИК <span id="currentSymbolLabel">BTCUSDT</span></h2>
+    <iframe id="tradingviewFrame" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_123&symbol=BINANCE:BTCUSDT&interval=60&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=RSI%2CMACD&theme=dark&style=1&timezone=Etc/UTC" frameborder="0"></iframe>
+</div>
+
+<button class="btn-refresh" onclick="refreshSignals()">🔄 ОБНОВИТЬ СИГНАЛЫ</button>
+
+<div class="footer">
+    AI Trade Machine v2.0 | 50+ активов | Торгуй осознанно
+</div>
+
+<script>
+    async function refreshSignals() {
+        try {
+            const response = await fetch('/api/signals');
+            const signals = await response.json();
+            const tbody = document.getElementById('signalsBody');
+            if (signals.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">📭 Нет активных сигналов</td></tr>';
+            } else {
+                tbody.innerHTML = signals.map(s => `
+                    <tr>
+                        <td>${new Date(s.timestamp).toLocaleTimeString()}</td>
+                        <td>${s.symbol}</td>
+                        <td class="${s.action === 'buy' ? 'buy' : 'sell'}">${s.action.toUpperCase()}</td>
+                        <td>$${Number(s.price).toLocaleString()}</td>
+                        <td>${s.rsi !== '-' ? s.rsi : '-'}</td>
+                        <td style="font-size:12px; max-width:200px;">${s.reason || '-'}</td>
+                    </tr>
+                `).join('');
+            }
+            const total = signals.length;
+            const buys = signals.filter(s => s.action === 'buy').length;
+            const sells = total - buys;
+            document.getElementById('totalSignals').innerText = total;
+            document.getElementById('buySignals').innerText = buys;
+            document.getElementById('sellSignals').innerText = sells;
+        } catch (e) { console.error('Ошибка:', e); }
+    }
+    
+    function changeChart() {
+        const symbol = document.getElementById('symbolSelect').value;
+        const symbolName = document.getElementById('symbolSelect').selectedOptions[0].text;
+        document.getElementById('currentSymbolLabel').innerText = symbolName;
+        const frame = document.getElementById('tradingviewFrame');
+        frame.src = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_123&symbol=${encodeURIComponent(symbol)}&interval=60&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=RSI%2CMACD&theme=dark&style=1&timezone=Etc/UTC`;
+    }
+    
+    refreshSignals();
+    setInterval(refreshSignals, 10000);
+</script>
+
+</body>
+</html>
