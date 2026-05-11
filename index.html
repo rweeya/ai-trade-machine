@@ -30,10 +30,8 @@
         .stat-item { background: #0a0e27; padding: 15px; border-radius: 10px; text-align: center; }
         .stat-value { font-size: 28px; font-weight: bold; color: #00ffaa; }
         .stat-label { font-size: 11px; color: #888; }
-        iframe { width: 100%; height: 400px; border-radius: 12px; border: 1px solid #00ffaa33; background: #0f1233; }
-        .btn-refresh { background: #00ffaa; color: #0a0e27; border: none; padding: 10px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-refresh { background: #00ffaa; color: #0a0e27; border: none; padding: 10px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; }
         .footer { margin-top: 30px; text-align: center; font-size: 11px; color: #555; }
-        ::-webkit-scrollbar { width: 6px; }
         tr { cursor: pointer; }
         tr:hover { background: #00ffaa11; }
     </style>
@@ -56,7 +54,6 @@
     <button class="tab-btn active" onclick="switchTab('signals')">📊 СИГНАЛЫ</button>
     <button class="tab-btn" onclick="switchTab('history')">📜 ИСТОРИЯ</button>
     <button class="tab-btn" onclick="switchTab('analytics')">📈 АНАЛИТИКА</button>
-    <button class="tab-btn" onclick="switchTab('chart')">📉 ГРАФИК</button>
 </div>
 
 <div id="signalsTab" class="tab-content active">
@@ -68,31 +65,41 @@
                 <tbody id="signalsBody"><tr><td colspan="7">Загрузка...</td></tr></tbody>
             </table>
         </div>
-        <button class="btn-refresh" onclick="refreshData()" style="margin-top:15px;">🔄 ОБНОВИТЬ</button>
+        <button class="btn-refresh" onclick="refreshData()">🔄 ОБНОВИТЬ</button>
     </div>
 </div>
 
+<div id="historyTab" class="tab-content">
+    <div class="card"><h2>ИСТОРИЯ СИГНАЛОВ</h2><div class="signals-container"><table><thead><tr><th>Время</th><th>Актив</th><th>Действие</th><th>Цена</th></tr></thead><tbody id="historyBody"><tr><td colspan="4">Загрузка...</td></tr></tbody></table></div></div>
+</div>
+
+<div id="analyticsTab" class="tab-content">
+    <div class="card"><h2>📊 АНАЛИТИКА</h2><div id="analyticsContent"><p style="color:#888;">Собираем статистику...</p></div></div>
+</div>
+
+<div class="footer">AI TRADE MACHINE | Клик по сигналу → график Bybit</div>
+
 <script>
     let lastSignalCount = 0;
-    
+
     function openChart(symbol) {
         let url;
         if (symbol.toUpperCase().includes('USDT')) {
             let base = symbol.toUpperCase().replace('USDT', '');
-            url = `https://www.bybit.com/trade/spot/${base}/USDT`;
+            url = 'https://www.bybit.com/trade/spot/' + base + '/USDT';
         } else {
-            url = `https://www.tradingview.com/chart/?symbol=${symbol}`;
+            url = 'https://www.tradingview.com/chart/?symbol=' + symbol;
         }
         window.open(url, '_blank');
     }
-    
+
     function switchTab(tab) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(tab + 'Tab').classList.add('active');
         event.target.classList.add('active');
     }
-    
+
     async function refreshData() {
         try {
             const response = await fetch('/api/signals');
@@ -102,28 +109,31 @@
             if (signals.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7">Нет активных сигналов</td></tr>';
             } else {
-                tbody.innerHTML = signals.map(s => `
-                    <tr onclick="openChart('${s.symbol}')">
-                        <td>${new Date(s.timestamp).toLocaleTimeString()}</td>
-                        <td><b>${s.symbol}</b></td>
-                        <td class="${s.action}">${s.action.toUpperCase()}</td>
-                        <td>$${Number(s.price).toLocaleString()}</td>
-                        <td>${s.rsi || '-'}</td>
-                        <td style="font-size:11px; max-width:300px;">${s.reason ? s.reason.slice(0,80) : '-'}</td>
-                        <td><button class="link-btn" onclick="event.stopPropagation(); openChart('${s.symbol}')">📈</button></td>
-                    </tr>
-                `).join('');
+                let html = '';
+                for (let i = 0; i < signals.length; i++) {
+                    const s = signals[i];
+                    html += '<tr onclick="openChart(\'' + s.symbol + '\')">';
+                    html += '<td>' + new Date(s.timestamp).toLocaleTimeString() + '</td>';
+                    html += '<td><b>' + s.symbol + '</b></td>';
+                    html += '<td class="' + s.action + '">' + s.action.toUpperCase() + '</td>';
+                    html += '<td>$' + Number(s.price).toLocaleString() + '</td>';
+                    html += '<td>' + (s.rsi || '-') + '</td>';
+                    html += '<td style="font-size:11px; max-width:300px;">' + (s.reason ? s.reason.slice(0,80) : '-') + '</td>';
+                    html += '<td><button class="link-btn" onclick="event.stopPropagation(); openChart(\'' + s.symbol + '\')">📈</button></td>';
+                    html += '</tr>';
+                }
+                tbody.innerHTML = html;
             }
             
             document.getElementById('totalSignals').innerText = signals.length;
             document.getElementById('buySignals').innerText = signals.filter(s => s.action === 'buy').length;
             document.getElementById('sellSignals').innerText = signals.filter(s => s.action === 'sell').length;
-            document.getElementById('signalCount').innerText = `(${signals.length})`;
+            document.getElementById('signalCount').innerHTML = '(' + signals.length + ')';
             
             if (signals.length > lastSignalCount && lastSignalCount !== 0) {
                 try {
                     const beep = new Audio('data:audio/wav;base64,U3RlYWx0aCBzb3VuZA==');
-                    beep.play().catch(e=>console.log('звук не работает'));
+                    beep.play().catch(function(e) {});
                 } catch(e) {}
             }
             lastSignalCount = signals.length;
@@ -133,7 +143,7 @@
     }
     
     refreshData();
-    setInterval(refreshData, 10000);
+    setInterval(refreshData, 15000);
 </script>
 
 </body>
