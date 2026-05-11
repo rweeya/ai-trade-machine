@@ -18,7 +18,7 @@
         .tab-content.active { display: block; }
         .card { background: #0f1233; border-radius: 12px; padding: 20px; border: 1px solid #00ffaa33; margin-bottom: 20px; }
         .card h2 { font-size: 18px; margin-bottom: 15px; color: #00ffaa; }
-        .signals-container { max-height: 1000px; overflow-y: auto; }
+        .signals-container { max-height: 800px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #00ffaa33; }
         th { color: #00ffaa; position: sticky; top: 0; background: #0f1233; }
@@ -30,9 +30,6 @@
         .stat-item { background: #0a0e27; padding: 15px; border-radius: 10px; text-align: center; }
         .stat-value { font-size: 28px; font-weight: bold; color: #00ffaa; }
         .stat-label { font-size: 11px; color: #888; }
-        .filter-bar { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        .filter-btn { background: #0a0e27; border: 1px solid #00ffaa33; color: #00ffaa; padding: 5px 12px; border-radius: 15px; cursor: pointer; }
-        .filter-btn.active { background: #00ffaa; color: #0a0e27; }
         iframe { width: 100%; height: 400px; border-radius: 12px; border: 1px solid #00ffaa33; background: #0f1233; }
         .btn-refresh { background: #00ffaa; color: #0a0e27; border: none; padding: 10px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .footer { margin-top: 30px; text-align: center; font-size: 11px; color: #555; }
@@ -66,7 +63,7 @@
     <div class="card">
         <h2>АКТИВНЫЕ СИГНАЛЫ <span id="signalCount"></span></h2>
         <div class="signals-container">
-            <table>
+            <table style="width:100%">
                 <thead><tr><th>Время</th><th>Актив</th><th>Действие</th><th>Цена</th><th>RSI</th><th>Причина</th><th></th></tr></thead>
                 <tbody id="signalsBody"><tr><td colspan="7">Загрузка...</td></tr></tbody>
             </table>
@@ -75,73 +72,69 @@
     </div>
 </div>
 
-<div id="historyTab" class="tab-content">
-    <div class="card"><h2>ИСТОРИЯ</h2><div class="signals-container"><table><thead><tr><th>Дата</th><th>Актив</th><th>Действие</th><th>Цена</th><th>RSI</th></tr></thead><tbody id="historyBody"></tbody></table></div></div>
-</div>
-
-<div id="analyticsTab" class="tab-content">
-    <div class="card"><h2>ГРАФИК ПРИБЫЛИ</h2><canvas id="profitChart" style="background:#0a0e27; border-radius:10px; width:100%; height:300px;"></canvas></div>
-    <div class="card"><h2>ТОЧНОСТЬ ПО АКТИВАМ</h2><div id="accuracyBySymbol"></div></div>
-</div>
-
-<div id="chartTab" class="tab-content">
-    <div class="card"><h2>ГРАФИК TRADINGVIEW</h2><iframe id="tradingviewFrame" src="https://www.tradingview.com/chart/?symbol=BINANCE:BTCUSDT&theme=dark" frameborder="0"></iframe></div>
-</div>
-
-<div class="footer">AI TRADE MACHINE | Клик по сигналу → график Bybit</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    let allSignals = [], lastSignalCount = 0;
-
+    let lastSignalCount = 0;
+    
     function openChart(symbol) {
         let url;
-        if (symbol.includes('USDT')) url = `https://www.bybit.com/trade/spot/${symbol.replace('USDT', '')}/USDT`;
-        else url = `https://www.tradingview.com/chart/?symbol=${symbol}`;
+        if (symbol.toUpperCase().includes('USDT')) {
+            let base = symbol.toUpperCase().replace('USDT', '');
+            url = `https://www.bybit.com/trade/spot/${base}/USDT`;
+        } else {
+            url = `https://www.tradingview.com/chart/?symbol=${symbol}`;
+        }
         window.open(url, '_blank');
     }
-
+    
     function switchTab(tab) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(tab + 'Tab').classList.add('active');
         event.target.classList.add('active');
     }
-
+    
     async function refreshData() {
-        const res = await fetch('/api/signals');
-        const signals = await res.json();
-        allSignals = signals;
-        
-        const tbody = document.getElementById('signalsBody');
-        if (signals.length === 0) tbody.innerHTML = '<tr><td colspan="7">Нет сигналов</td></tr>';
-        else {
-            tbody.innerHTML = signals.map(s => `
-                <tr onclick="openChart('${s.symbol}')">
-                    <td>${new Date(s.timestamp).toLocaleTimeString()}</td>
-                    <td><b>${s.symbol}</b></td>
-                    <td class="${s.action}">${s.action.toUpperCase()}</td>
-                    <td>$${Number(s.price).toLocaleString()}</td>
-                    <td>${s.rsi || '-'}</td>
-                    <td style="font-size:11px;">${s.reason?.slice(0,60) || '-'}</td>
-                    <td><button class="link-btn" onclick="event.stopPropagation(); openChart('${s.symbol}')">📈</button></td>
-                </tr>
-            `).join('');
+        try {
+            const response = await fetch('/api/signals');
+            const signals = await response.json();
+            
+            const tbody = document.getElementById('signalsBody');
+            if (signals.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7">Нет активных сигналов</td></tr>';
+            } else {
+                tbody.innerHTML = signals.map(s => `
+                    <tr onclick="openChart('${s.symbol}')">
+                        <td>${new Date(s.timestamp).toLocaleTimeString()}</td>
+                        <td><b>${s.symbol}</b></td>
+                        <td class="${s.action}">${s.action.toUpperCase()}</td>
+                        <td>$${Number(s.price).toLocaleString()}</td>
+                        <td>${s.rsi || '-'}</td>
+                        <td style="font-size:11px; max-width:300px;">${s.reason ? s.reason.slice(0,80) : '-'}</td>
+                        <td><button class="link-btn" onclick="event.stopPropagation(); openChart('${s.symbol}')">📈</button></td>
+                    </tr>
+                `).join('');
+            }
+            
+            document.getElementById('totalSignals').innerText = signals.length;
+            document.getElementById('buySignals').innerText = signals.filter(s => s.action === 'buy').length;
+            document.getElementById('sellSignals').innerText = signals.filter(s => s.action === 'sell').length;
+            document.getElementById('signalCount').innerText = `(${signals.length})`;
+            
+            if (signals.length > lastSignalCount && lastSignalCount !== 0) {
+                try {
+                    const beep = new Audio('data:audio/wav;base64,U3RlYWx0aCBzb3VuZA==');
+                    beep.play().catch(e=>console.log('звук не работает'));
+                } catch(e) {}
+            }
+            lastSignalCount = signals.length;
+        } catch(e) {
+            console.error('Ошибка:', e);
         }
-        
-        document.getElementById('totalSignals').innerText = signals.length;
-        document.getElementById('buySignals').innerText = signals.filter(s => s.action === 'buy').length;
-        document.getElementById('sellSignals').innerText = signals.filter(s => s.action === 'sell').length;
-        document.getElementById('signalCount').innerText = `(${signals.length})`;
-        
-        if (signals.length > lastSignalCount && lastSignalCount !== 0) {
-            try { new Audio('data:audio/wav;base64,U3RlYWx0aCBzb3VuZA==').play(); } catch(e) {}
-        }
-        lastSignalCount = signals.length;
     }
     
     refreshData();
     setInterval(refreshData, 10000);
 </script>
+
 </body>
 </html>
