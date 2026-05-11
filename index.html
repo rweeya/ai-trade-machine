@@ -4,36 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Trade Machine</title>
-    <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230a0e27'/%3E%3Ccircle cx='50' cy='40' r='18' fill='%2300ffaa'/%3E%3Crect x='35' y='55' width='30' height='25' rx='5' fill='%2300ffaa'/%3E%3Ccircle cx='38' cy='52' r='3' fill='%230a0e27'/%3E%3Ccircle cx='62' cy='52' r='3' fill='%230a0e27'/%3E%3C/svg%3E">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0a0e27; color: #00ffaa; font-family: 'Segoe UI', monospace; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         h1 { font-size: 28px; text-shadow: 0 0 10px #00ffaa; }
         .badge { background: #00ffaa22; padding: 8px 16px; border-radius: 20px; font-size: 14px; border: 1px solid #00ffaa; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #00ffaa33; }
-        .tab-btn { background: none; border: none; color: #888; padding: 10px 20px; font-size: 16px; cursor: pointer; }
-        .tab-btn.active { color: #00ffaa; border-bottom: 2px solid #00ffaa; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
         .card { background: #0f1233; border-radius: 12px; padding: 20px; border: 1px solid #00ffaa33; margin-bottom: 20px; }
-        .card h2 { font-size: 18px; margin-bottom: 15px; color: #00ffaa; }
         .signals-container { max-height: 800px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #00ffaa33; }
         th { color: #00ffaa; position: sticky; top: 0; background: #0f1233; }
         .buy { color: #00ff88; font-weight: bold; }
         .sell { color: #ff4444; font-weight: bold; }
-        .link-btn { background: #00ffaa22; color: #00ffaa; padding: 5px 10px; border-radius: 6px; border: 1px solid #00ffaa; cursor: pointer; font-size: 11px; }
-        .link-btn:hover { background: #00ffaa; color: #0a0e27; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        tr { cursor: pointer; }
+        tr:hover { background: #00ffaa11; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
         .stat-item { background: #0a0e27; padding: 15px; border-radius: 10px; text-align: center; }
         .stat-value { font-size: 28px; font-weight: bold; color: #00ffaa; }
         .stat-label { font-size: 11px; color: #888; }
-        .btn-refresh { background: #00ffaa; color: #0a0e27; border: none; padding: 10px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; }
         .footer { margin-top: 30px; text-align: center; font-size: 11px; color: #555; }
-        tr { cursor: pointer; }
-        tr:hover { background: #00ffaa11; }
     </style>
 </head>
 <body>
@@ -47,57 +37,30 @@
     <div class="stat-item"><div class="stat-value" id="totalSignals">0</div><div class="stat-label">ВСЕГО</div></div>
     <div class="stat-item"><div class="stat-value" id="buySignals">0</div><div class="stat-label">BUY</div></div>
     <div class="stat-item"><div class="stat-value" id="sellSignals">0</div><div class="stat-label">SELL</div></div>
-    <div class="stat-item"><div class="stat-value" id="accuracyPercent">0%</div><div class="stat-label">ТОЧНОСТЬ</div></div>
 </div>
 
-<div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('signals')">📊 СИГНАЛЫ</button>
-    <button class="tab-btn" onclick="switchTab('history')">📜 ИСТОРИЯ</button>
-    <button class="tab-btn" onclick="switchTab('analytics')">📈 АНАЛИТИКА</button>
-</div>
-
-<div id="signalsTab" class="tab-content active">
-    <div class="card">
-        <h2>АКТИВНЫЕ СИГНАЛЫ <span id="signalCount"></span></h2>
-        <div class="signals-container">
-            <table style="width:100%">
-                <thead><tr><th>Время</th><th>Актив</th><th>Действие</th><th>Цена</th><th>RSI</th><th>Причина</th><th></th></tr></thead>
-                <tbody id="signalsBody"><tr><td colspan="7">Загрузка...</td></tr></tbody>
-            </table>
-        </div>
-        <button class="btn-refresh" onclick="refreshData()">🔄 ОБНОВИТЬ</button>
+<div class="card">
+    <h2>📊 АКТИВНЫЕ СИГНАЛЫ <span id="signalCount"></span></h2>
+    <div class="signals-container">
+        <table style="width:100%">
+            <thead>
+                <tr><th>Время</th><th>Актив</th><th>Действие</th><th>Цена</th>
+                 <th>RSI</th><th>Причина</th></tr>
+            </thead>
+            <tbody id="signalsBody">
+                <tr><td colspan="6">Загрузка...</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
-<div id="historyTab" class="tab-content">
-    <div class="card"><h2>ИСТОРИЯ СИГНАЛОВ</h2><div class="signals-container"><table><thead><tr><th>Время</th><th>Актив</th><th>Действие</th><th>Цена</th></tr></thead><tbody id="historyBody"><tr><td colspan="4">Загрузка...</td></tr></tbody></table></div></div>
-</div>
-
-<div id="analyticsTab" class="tab-content">
-    <div class="card"><h2>📊 АНАЛИТИКА</h2><div id="analyticsContent"><p style="color:#888;">Собираем статистику...</p></div></div>
-</div>
-
-<div class="footer">AI TRADE MACHINE | Клик по сигналу → график Bybit</div>
+<div class="footer">AI Trade Machine | Клик по активу → график Bybit</div>
 
 <script>
-    let lastSignalCount = 0;
-
     function openChart(symbol) {
-        let url;
-        if (symbol.toUpperCase().includes('USDT')) {
-            let base = symbol.toUpperCase().replace('USDT', '');
-            url = 'https://www.bybit.com/trade/spot/' + base + '/USDT';
-        } else {
-            url = 'https://www.tradingview.com/chart/?symbol=' + symbol;
-        }
+        let base = symbol.replace('USDT', '');
+        let url = 'https://www.bybit.com/trade/spot/' + base + '/USDT';
         window.open(url, '_blank');
-    }
-
-    function switchTab(tab) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tab + 'Tab').classList.add('active');
-        event.target.classList.add('active');
     }
 
     async function refreshData() {
@@ -107,7 +70,7 @@
             
             const tbody = document.getElementById('signalsBody');
             if (signals.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7">Нет активных сигналов</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6">Нет активных сигналов</td></tr>';
             } else {
                 let html = '';
                 for (let i = 0; i < signals.length; i++) {
@@ -118,8 +81,7 @@
                     html += '<td class="' + s.action + '">' + s.action.toUpperCase() + '</td>';
                     html += '<td>$' + Number(s.price).toLocaleString() + '</td>';
                     html += '<td>' + (s.rsi || '-') + '</td>';
-                    html += '<td style="font-size:11px; max-width:300px;">' + (s.reason ? s.reason.slice(0,80) : '-') + '</td>';
-                    html += '<td><button class="link-btn" onclick="event.stopPropagation(); openChart(\'' + s.symbol + '\')">📈</button></td>';
+                    html += '<td style="font-size:11px;">' + (s.reason ? s.reason.slice(0,60) : '-') + '</td>';
                     html += '</tr>';
                 }
                 tbody.innerHTML = html;
@@ -129,14 +91,6 @@
             document.getElementById('buySignals').innerText = signals.filter(s => s.action === 'buy').length;
             document.getElementById('sellSignals').innerText = signals.filter(s => s.action === 'sell').length;
             document.getElementById('signalCount').innerHTML = '(' + signals.length + ')';
-            
-            if (signals.length > lastSignalCount && lastSignalCount !== 0) {
-                try {
-                    const beep = new Audio('data:audio/wav;base64,U3RlYWx0aCBzb3VuZA==');
-                    beep.play().catch(function(e) {});
-                } catch(e) {}
-            }
-            lastSignalCount = signals.length;
         } catch(e) {
             console.error('Ошибка:', e);
         }
