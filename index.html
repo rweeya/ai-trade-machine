@@ -2,25 +2,27 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Trade Machine</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0a0e27; color: #00ffaa; font-family: 'Segoe UI', monospace; padding: 20px; }
-        h1 { font-size: 28px; }
-        .header { display: flex; justify-content: space-between; margin-bottom: 30px; }
-        .badge { background: #00ffaa22; padding: 8px 16px; border-radius: 20px; }
-        .card { background: #0f1233; border-radius: 12px; padding: 20px; border: 1px solid #00ffaa33; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        h1 { font-size: 28px; text-shadow: 0 0 10px #00ffaa; }
+        .badge { background: #00ffaa22; padding: 8px 16px; border-radius: 20px; font-size: 14px; border: 1px solid #00ffaa; }
+        .card { background: #0f1233; border-radius: 12px; padding: 20px; border: 1px solid #00ffaa33; margin-bottom: 20px; }
         .signals-container { max-height: 800px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #00ffaa33; }
-        th { color: #00ffaa; }
-        .buy { color: #00ff88; }
-        .sell { color: #ff4444; }
-        tr { cursor: pointer; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #00ffaa33; }
+        th { color: #00ffaa; position: sticky; top: 0; background: #0f1233; }
+        .buy { color: #00ff88; font-weight: bold; }
+        .sell { color: #ff4444; font-weight: bold; }
+        tr { cursor: pointer; transition: background 0.2s; }
         tr:hover { background: #00ffaa15; }
-        .stats { display: flex; gap: 20px; margin-bottom: 20px; }
-        .stat { background: #0a0e27; padding: 15px; border-radius: 10px; text-align: center; flex: 1; }
-        .stat-value { font-size: 32px; font-weight: bold; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-item { background: #0a0e27; padding: 15px; border-radius: 10px; text-align: center; }
+        .stat-value { font-size: 28px; font-weight: bold; color: #00ffaa; }
+        .stat-label { font-size: 11px; color: #888; }
         .footer { margin-top: 30px; text-align: center; font-size: 11px; color: #555; }
     </style>
 </head>
@@ -31,58 +33,77 @@
     <div class="badge">🟢 АКТИВЕН</div>
 </div>
 
-<div class="stats">
-    <div class="stat"><div class="stat-value" id="totalSignals">0</div><div>ВСЕГО</div></div>
-    <div class="stat"><div class="stat-value" id="buySignals">0</div><div>BUY</div></div>
-    <div class="stat"><div class="stat-value" id="sellSignals">0</div><div>SELL</div></div>
+<div class="stats-grid">
+    <div class="stat-item"><div class="stat-value" id="totalSignals">0</div><div class="stat-label">ВСЕГО</div></div>
+    <div class="stat-item"><div class="stat-value" id="buySignals">0</div><div class="stat-label">BUY</div></div>
+    <div class="stat-item"><div class="stat-value" id="sellSignals">0</div><div class="stat-label">SELL</div></div>
 </div>
 
 <div class="card">
     <h2>📊 АКТИВНЫЕ СИГНАЛЫ <span id="signalCount"></span></h2>
     <div class="signals-container">
-        <table>
-            <thead><tr><th>Время</th><th>Актив</th><th>Действие</th><th>Цена</th><th>RSI</th><th>Причина</th></tr></thead>
-            <tbody id="signalsBody"><tr><td colspan="6">Загрузка...</td></tr></tbody>
+        <table style="width:100%">
+            <thead>
+                <tr><th>Время</th><th>Актив</th><th>Действие</th><th>Цена</th>
+                 <th>RSI</th><th>Причина</th></tr>
+            </thead>
+            <tbody id="signalsBody">
+                <tr><td colspan="6">Загрузка...</td></tr>
+            </tbody>
         </table>
     </div>
 </div>
 
-<div class="footer">Клик по активу → график Bybit</div>
+<div class="footer">AI Trade Machine | Клик по активу → график Bybit</div>
 
 <script>
+    // ИСПРАВЛЕННАЯ функция открытия графика
     function openChart(symbol) {
-        let pair = symbol.toUpperCase().replace('USDT', '');
-        window.open('https://www.bybit.com/trade/spot/' + pair + '/USDT', '_blank');
+        if (!symbol) return;
+        // Убираем слеш если есть (BTC/USDT → BTCUSDT)
+        let cleanSymbol = symbol.replace('/', '');
+        // Открываем график на Bybit с таймфреймом 1 час
+        let url = 'https://www.bybit.com/trade/spot/' + cleanSymbol + '?interval=60';
+        window.open(url, '_blank');
     }
 
-    async function refresh() {
-        const res = await fetch('/api/signals');
-        const data = await res.json();
-        const tbody = document.getElementById('signalsBody');
-        
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6">Нет сигналов</td></tr>';
-        } else {
-            tbody.innerHTML = data.map(s => `
-                <tr onclick="openChart('${s.symbol}')">
-                    <td>${new Date(s.timestamp).toLocaleTimeString()}</td>
-                    <td><b>${s.symbol}</b></td>
-                    <td class="${s.action}">${s.action.toUpperCase()}</td>
-                    <td>$${Number(s.price).toLocaleString()}</td>
-                    <td>${s.rsi || '-'}</td>
-                    <td style="font-size:12px">${(s.reason || '-').slice(0,80)}</td>
-                </tr>
-            `).join('');
+    async function refreshData() {
+        try {
+            const response = await fetch('/api/signals');
+            const signals = await response.json();
+            
+            const tbody = document.getElementById('signalsBody');
+            if (signals.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">Нет активных сигналов</td></tr>';
+            } else {
+                let html = '';
+                for (let i = 0; i < signals.length; i++) {
+                    const s = signals[i];
+                    // Используем symbol как есть (например BTC/USDT или BTCUSDT)
+                    const symbolForUrl = s.symbol;
+                    html += '<tr onclick="openChart(\'' + symbolForUrl + '\')">';
+                    html += '<td>' + new Date(s.timestamp).toLocaleTimeString() + '</td>';
+                    html += '<td><b>' + s.symbol + '</b></td>';
+                    html += '<td class="' + s.action + '">' + s.action.toUpperCase() + '</td>';
+                    html += '<td>$' + Number(s.price).toLocaleString() + '</td>';
+                    html += '<td>' + (s.rsi || '-') + '</td>';
+                    html += '<td style="font-size:11px;">' + (s.reason ? s.reason.slice(0,60) : '-') + '</td>';
+                    html += '</tr>';
+                }
+                tbody.innerHTML = html;
+            }
+            
+            document.getElementById('totalSignals').innerText = signals.length;
+            document.getElementById('buySignals').innerText = signals.filter(s => s.action === 'buy').length;
+            document.getElementById('sellSignals').innerText = signals.filter(s => s.action === 'sell').length;
+            document.getElementById('signalCount').innerHTML = '(' + signals.length + ')';
+        } catch(e) {
+            console.error('Ошибка:', e);
         }
-        
-        document.getElementById('totalSignals').innerText = data.length;
-        document.getElementById('buySignals').innerText = data.filter(s => s.action === 'buy').length;
-        document.getElementById('sellSignals').innerText = data.filter(s => s.action === 'sell').length;
-        document.getElementById('signalCount').innerText = `(${data.length})`;
     }
     
-    refresh();
-    setInterval(refresh, 15000);
+    refreshData();
+    setInterval(refreshData, 15000);
 </script>
 
 </body>
