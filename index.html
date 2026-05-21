@@ -5,106 +5,271 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Trade Machine</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #0a0e27; color: #00ffaa; font-family: 'Segoe UI', monospace; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        h1 { font-size: 28px; text-shadow: 0 0 10px #00ffaa; }
-        .badge { background: #00ffaa22; padding: 8px 16px; border-radius: 20px; font-size: 14px; border: 1px solid #00ffaa; }
-        .card { background: #0f1233; border-radius: 12px; padding: 20px; border: 1px solid #00ffaa33; margin-bottom: 20px; }
-        .signals-container { max-height: 800px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #00ffaa33; }
-        th { color: #00ffaa; position: sticky; top: 0; background: #0f1233; }
-        .buy { color: #00ff88; font-weight: bold; }
-        .sell { color: #ff4444; font-weight: bold; }
-        tr { cursor: pointer; transition: background 0.2s; }
-        tr:hover { background: #00ffaa15; }
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
-        .stat-item { background: #0a0e27; padding: 15px; border-radius: 10px; text-align: center; }
-        .stat-value { font-size: 28px; font-weight: bold; color: #00ffaa; }
-        .stat-label { font-size: 11px; color: #888; }
-        .footer { margin-top: 30px; text-align: center; font-size: 11px; color: #555; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0a0e27;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #00ff88;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #141a33;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #2a3457;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .table-container {
+            background: #141a33;
+            border-radius: 12px;
+            overflow: auto;
+            max-height: 600px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #1a2340;
+            padding: 15px 12px;
+            text-align: left;
+            font-size: 12px;
+            color: #aaa;
+            position: sticky;
+            top: 0;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #2a3457;
+        }
+        
+        tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        tr:hover {
+            background: #1f2a4a;
+        }
+        
+        .buy {
+            color: #00ff88;
+            font-weight: bold;
+        }
+        
+        .sell {
+            color: #ff4444;
+            font-weight: bold;
+        }
+        
+        .refresh-btn {
+            background: #00ff88;
+            color: #0a0e27;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .refresh-btn:hover {
+            background: #00cc6a;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #555;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
     </style>
 </head>
 <body>
-
-<div class="header">
-    <h1>🤖 AI TRADE MACHINE</h1>
-    <div class="badge">🟢 АКТИВЕН</div>
-</div>
-
-<div class="stats-grid">
-    <div class="stat-item"><div class="stat-value" id="totalSignals">0</div><div class="stat-label">ВСЕГО</div></div>
-    <div class="stat-item"><div class="stat-value" id="buySignals">0</div><div class="stat-label">BUY</div></div>
-    <div class="stat-item"><div class="stat-value" id="sellSignals">0</div><div class="stat-label">SELL</div></div>
-</div>
-
-<div class="card">
-    <h2>📊 АКТИВНЫЕ СИГНАЛЫ <span id="signalCount"></span></h2>
-    <div class="signals-container">
-        <table style="width:100%">
-            <thead>
-                <tr><th>Время</th><th>Актив</th><th>Действие</th><th>Цена</th>
-                 <th>RSI</th><th>Причина</th></tr>
-            </thead>
-            <tbody id="signalsBody">
-                <tr><td colspan="6">Загрузка...</td></tr>
-            </tbody>
-        </table>
+    <div class="container">
+        <h1>🤖 AI Trade Machine</h1>
+        <div class="subtitle">Автономная торговая система | Клик по строке → график Bybit</div>
+        
+        <button class="refresh-btn" onclick="location.reload()">🔄 Обновить сигналы</button>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalSignals">0</div>
+                <div class="stat-label">ВСЕГО СИГНАЛОВ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="buySignals">0</div>
+                <div class="stat-label">BUY</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="sellSignals">0</div>
+                <div class="stat-label">SELL</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="accuracy">—</div>
+                <div class="stat-label">ТОЧНОСТЬ</div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table id="signalsTable">
+                <thead>
+                    <tr>
+                        <th>Актив</th>
+                        <th>Таймфрейм</th>
+                        <th>Сигнал</th>
+                        <th>Цена</th>
+                        <th>RSI</th>
+                        <th>Время</th>
+                    </tr>
+                </thead>
+                <tbody id="signalsBody">
+                    <tr>
+                        <td colspan="6" class="loading">Загрузка сигналов...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="footer">
+            🟢 Система активна | Сигналы обновляются каждые 15 секунд
+        </div>
     </div>
-</div>
-
-<div class="footer">AI Trade Machine | Клик по активу → график Bybit</div>
-
-<script>
-    // ИСПРАВЛЕННАЯ функция открытия графика
-    function openChart(symbol) {
-        if (!symbol) return;
-        // Убираем слеш если есть (BTC/USDT → BTCUSDT)
-        let cleanSymbol = symbol.replace('/', '');
-        // Открываем график на Bybit с таймфреймом 1 час
-        let url = 'https://www.bybit.com/trade/spot/' + cleanSymbol + '?interval=60';
-        window.open(url, '_blank');
-    }
-
-    async function refreshData() {
-        try {
-            const response = await fetch('/api/signals');
-            const signals = await response.json();
-            
-            const tbody = document.getElementById('signalsBody');
-            if (signals.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6">Нет активных сигналов</td></tr>';
-            } else {
-                let html = '';
-                for (let i = 0; i < signals.length; i++) {
-                    const s = signals[i];
-                    // Используем symbol как есть (например BTC/USDT или BTCUSDT)
-                    const symbolForUrl = s.symbol;
-                    html += '<tr onclick="openChart(\'' + symbolForUrl + '\')">';
-                    html += '<td>' + new Date(s.timestamp).toLocaleTimeString() + '</td>';
-                    html += '<td><b>' + s.symbol + '</b></td>';
-                    html += '<td class="' + s.action + '">' + s.action.toUpperCase() + '</td>';
-                    html += '<td>$' + Number(s.price).toLocaleString() + '</td>';
-                    html += '<td>' + (s.rsi || '-') + '</td>';
-                    html += '<td style="font-size:11px;">' + (s.reason ? s.reason.slice(0,60) : '-') + '</td>';
-                    html += '</tr>';
-                }
-                tbody.innerHTML = html;
+    
+    <script>
+        // Функция открытия графика Bybit (работает 100%)
+        function openBybitChart(symbol) {
+            if (!symbol) {
+                console.warn('Нет символа');
+                return;
             }
             
-            document.getElementById('totalSignals').innerText = signals.length;
-            document.getElementById('buySignals').innerText = signals.filter(s => s.action === 'buy').length;
-            document.getElementById('sellSignals').innerText = signals.filter(s => s.action === 'sell').length;
-            document.getElementById('signalCount').innerHTML = '(' + signals.length + ')';
-        } catch(e) {
-            console.error('Ошибка:', e);
+            // Очищаем символ: BTC/USDT -> BTCUSDT
+            let cleanSymbol = symbol.replace('/', '').replace('USDT', '');
+            let url = 'https://www.bybit.com/trade/spot/' + cleanSymbol + '/USDT?interval=60';
+            
+            console.log('Открываем график:', url);
+            window.open(url, '_blank');
         }
-    }
-    
-    refreshData();
-    setInterval(refreshData, 15000);
-</script>
-
+        
+        // Загрузка сигналов с сервера
+        async function loadSignals() {
+            try {
+                const response = await fetch('/api/signals');
+                const signals = await response.json();
+                
+                const tbody = document.getElementById('signalsBody');
+                
+                if (!signals || signals.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="loading">📡 Нет сигналов. Ожидание первого сигнала от парсера...</td></tr>';
+                    document.getElementById('totalSignals').innerText = '0';
+                    document.getElementById('buySignals').innerText = '0';
+                    document.getElementById('sellSignals').innerText = '0';
+                    return;
+                }
+                
+                let buyCount = 0;
+                let sellCount = 0;
+                let html = '';
+                
+                for (let i = 0; i < signals.length; i++) {
+                    const s = signals[i];
+                    
+                    if (s.action === 'buy' || s.direction === 'BUY') buyCount++;
+                    if (s.action === 'sell' || s.direction === 'SELL') sellCount++;
+                    
+                    const action = (s.action || s.direction || '').toUpperCase();
+                    const actionClass = action === 'BUY' ? 'buy' : 'sell';
+                    const symbol = s.symbol || '?';
+                    const timeframe = s.timeframe || '1h';
+                    const price = s.price ? '$' + Number(s.price).toLocaleString() : '—';
+                    const rsi = s.rsi || '—';
+                    const timestamp = s.timestamp ? new Date(s.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+                    
+                    // Ключевой момент: onclick прямо в строке
+                    html += `<tr onclick="openBybitChart('${symbol}')" style="cursor: pointer;">`;
+                    html += `<td><b>${symbol}</b></td>`;
+                    html += `<td>${timeframe}</td>`;
+                    html += `<td class="${actionClass}">${action}</td>`;
+                    html += `<td>${price}</td>`;
+                    html += `<td>${rsi}</td>`;
+                    html += `<td>${timestamp}</td>`;
+                    html += `</tr>`;
+                }
+                
+                tbody.innerHTML = html;
+                document.getElementById('totalSignals').innerText = signals.length;
+                document.getElementById('buySignals').innerText = buyCount;
+                document.getElementById('sellSignals').innerText = sellCount;
+                
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                document.getElementById('signalsBody').innerHTML = '<tr><td colspan="6" class="loading">❌ Ошибка подключения к серверу</td></tr>';
+            }
+        }
+        
+        // Загружаем сразу
+        loadSignals();
+        
+        // И каждые 15 секунд
+        setInterval(loadSignals, 15000);
+        
+        // Проверяем что функция доступна глобально
+        window.openBybitChart = openBybitChart;
+        console.log('✅ Скрипт загружен, функция openBybitChart доступна');
+    </script>
 </body>
 </html>
